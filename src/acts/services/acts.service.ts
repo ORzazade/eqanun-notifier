@@ -55,8 +55,8 @@ export class ActsService {
           maxId = Math.max(maxId, raw.eqanunId);
           if (!opts?.initialLoad) {
             await repoOutbox.save({
-              kind: 'NEW_ACTS_DETECTED',
-              payload: { eqanunId: raw.eqanunId },
+              kind: 'ACT_CHANGE_DETECTED',
+              payload: { eqanunId: raw.eqanunId, event: 'CREATED' },
               status: 'NEW',
             });
           }
@@ -74,8 +74,8 @@ export class ActsService {
             updated++;
             if (!opts?.initialLoad) {
               await repoOutbox.save({
-                kind: 'NEW_ACTS_DETECTED',
-                payload: { eqanunId: raw.eqanunId, updated: true },
+                kind: 'ACT_CHANGE_DETECTED',
+                payload: { eqanunId: raw.eqanunId, event: 'UPDATED', updated: true },
                 status: 'NEW',
               });
             }

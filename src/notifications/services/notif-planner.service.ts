@@ -17,7 +17,10 @@ export class NotifPlannerService {
     await this.ds.transaction(async manager => {
       const outboxRepo = manager.getRepository(Outbox);
       const pending = await outboxRepo.find({
-        where: { kind: 'NEW_ACTS_DETECTED', status: 'NEW' },
+        where: [
+          { kind: 'NEW_ACTS_DETECTED', status: 'NEW' },     
+          { kind: 'ACT_CHANGE_DETECTED', status: 'NEW' },  
+        ],
         take: 200,
         order: { createdAt: 'ASC' },
       });

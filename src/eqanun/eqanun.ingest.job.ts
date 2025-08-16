@@ -14,7 +14,8 @@ export class EqanunIngestJob {
     private readonly acts: ActsService,
   ) {}
 
-  @Cron('0 0 9,18 * * *', { timeZone: process.env.TZ || 'Asia/Baku' })
+  // every 30 minutes between 08:00 and 23:30 local time (last run at 23:30)
+  @Cron('0 */30 8-23 * * *', { timeZone: process.env.TZ || 'Asia/Baku' })
   async runCron() {
     await this.performIngest();
   }

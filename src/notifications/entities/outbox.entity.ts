@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-export type OutboxKind = 'NEW_ACTS_DETECTED' | 'USER_NOTIFICATION';
+export type OutboxKind = 'NEW_ACTS_DETECTED' | 'ACT_CHANGE_DETECTED' | 'USER_NOTIFICATION';
 export type OutboxStatus = 'NEW' | 'SENT' | 'FAILED';
 
 @Entity('outbox')
