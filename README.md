@@ -41,3 +41,19 @@ TZ=Asia/Baku
 
 - Selectors in the scraper are heuristics and may need minor adjustments.
 - Outbox pattern ensures reliability; failed sends retry up to 5 times.
+
+## Deployment
+
+This service is deployed to a single production environment via [Coolify](https://coolify.io).
+Each push to `main` triggers a GitHub Actions workflow that:
+
+1. Builds the application and runs database migrations.
+2. Pushes the Docker image to GitHub Container Registry.
+3. Calls the Coolify deployment webhook to update the live instance.
+
+Configure the following secrets in your repository settings for the
+workflow to succeed:
+
+- `DATABASE_URL` – PostgreSQL connection string used for migrations.
+- `COOLIFY_WEBHOOK` – deployment URL from your Coolify instance.
+- `COOLIFY_TOKEN` – API token for authenticating with Coolify.
