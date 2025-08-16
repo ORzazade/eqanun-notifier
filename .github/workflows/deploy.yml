@@ -13,12 +13,13 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production   
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
-
       - uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
@@ -40,6 +41,4 @@ jobs:
 
       - name: Trigger Coolify deployment
         run: |
-          curl -fsS --retry 3 \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
-            "${{ secrets.COOLIFY_WEBHOOK }}"
+          curl -fsS --retry 3 -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" "${{ secrets.COOLIFY_WEBHOOK }}"
