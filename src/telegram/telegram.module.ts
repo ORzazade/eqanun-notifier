@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../subscriptions/entities/user.entity';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EqanunModule } from '../eqanun/eqanun.module'; 
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         return { token };
       },
     }),
+    EqanunModule,
     TypeOrmModule.forFeature([User, Subscription]),
   ],
   providers: [TelegramUpdate, TelegramServiceX],

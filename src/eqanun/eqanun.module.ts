@@ -8,5 +8,6 @@ import { EqanunApiService } from './eqanun.api.service';
   imports: [ActsModule],
   providers: [EqanunApiService, EqanunIngestJob],
   controllers: [EqanunController],
+  exports: [EqanunIngestJob, EqanunApiService],
 })
 export class EqanunModule { }

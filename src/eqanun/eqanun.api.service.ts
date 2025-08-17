@@ -66,4 +66,11 @@ export class EqanunApiService {
     const totalCount = Number(res.data.totalCount ?? 0);
     return { data, totalCount };
   }
+
+  async uniqueTypeNames(limit = 200): Promise<string[]> {
+    const page = await this.fetchPage(0, limit);
+    const set = new Set<string>();
+    page.data.forEach((i) => i.typeName && set.add(i.typeName));
+    return Array.from(set);
+  }
 }

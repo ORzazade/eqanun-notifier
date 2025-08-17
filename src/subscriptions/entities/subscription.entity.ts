@@ -10,7 +10,7 @@ export class Subscription {
   id!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' }) // ensure column name matches migration
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @Column({ type: 'varchar', length: 16 })

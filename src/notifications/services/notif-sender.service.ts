@@ -4,7 +4,9 @@ import { DataSource } from 'typeorm';
 import { Outbox } from '../entities/outbox.entity';
 import { TelegramServiceX } from '../../telegram/telegram.service';
 
-const TELEGRAM_LIMIT = 4096;
+function escapeHtml(s: string) {
+  return s.replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]!));
+}
 
 @Injectable()
 export class NotifSenderService {
@@ -13,7 +15,7 @@ export class NotifSenderService {
 
   @Cron('0 * * * * *', { timeZone: process.env.TZ || 'Asia/Baku' })
   async send() {
-    await this.ds.transaction(async manager => {
+    await this.ds.transaction(async (manager) => {
       const repo = manager.getRepository(Outbox);
       const jobs = await repo.find({
         where: { kind: 'USER_NOTIFICATION', status: 'NEW' },
@@ -22,27 +24,12 @@ export class NotifSenderService {
       });
       for (const job of jobs) {
         const p = job.payload;
-        let title = p.title as string;
-        // Fallback escape (in case older payloads exist)
-        if (!title.includes('\\')) {
-          try {
-            // Lazy import to avoid circular
-            const { escapeMarkdown } = require('../../common/utils/text.util');
-            title = escapeMarkdown(title);
-          } catch {
-            /* ignore */
-          }
-        }
-        let text = `${p.updated ? '🔁 Updated act' : '🆕 New act'}:\n*${title}*\n_${p.category}_\n${p.url}`;
-        if (text.length > TELEGRAM_LIMIT) {
-          const extra = text.length - TELEGRAM_LIMIT;
-            // Trim title to fit
-          const allowedTitleLen = Math.max(20, title.length - extra - 10);
-          title = title.slice(0, allowedTitleLen) + '…';
-          text = `${p.updated ? '🔁 Updated act' : '🆕 New act'}:\n*${title}*\n_${p.category}_\n${p.url}`;
-        }
+        const text =
+          `${p.updated ? '🔁' : '🆕'} <b>${escapeHtml(p.title)}</b>\n` +
+          `<i>${escapeHtml(p.category)}</i>\n` +
+          `${p.url}`;
         try {
-          await this.tg.sendMessage(String(p.telegramChatId), text);
+          await this.tg.sendMessage(String(p.telegramChatId), text, true /* html */);
           job.status = 'SENT';
         } catch (e) {
           job.attempts++;
