@@ -6,6 +6,12 @@ import { LegalAct } from '../../acts/entities/legal-act.entity';
 import { Subscription } from '../../subscriptions/entities/subscription.entity';
 import { User } from '../../subscriptions/entities/user.entity';
 import { buildSafeTitleForTelegram } from '../../common/utils/text.util';
+import {
+  normalizeForMatch,
+  tokenizeTitleForMatch,
+  tokenizeQueryForMatch,
+  fuzzyTokenMatch,
+} from '../../common/utils/text.util';
 
 @Injectable()
 export class NotifPlannerService {
@@ -34,9 +40,10 @@ export class NotifPlannerService {
         const act = await actRepo.findOne({ where: { eqanunId } });
         if (!act) { evt.status = 'FAILED'; await outboxRepo.save(evt); continue; }
 
+        const titleTokens = tokenizeTitleForMatch(act.title);
         const subs = await subsRepo.find({ where: { isActive: true }, relations: ['user'] });
         for (const sub of subs) {
-          if (this.matches(sub, act)) {
+          if (this.matches(sub, act, titleTokens)) {
             const safe = buildSafeTitleForTelegram(act.title);
             await outboxRepo.save({
               kind: 'USER_NOTIFICATION',
@@ -60,14 +67,17 @@ export class NotifPlannerService {
     });
   }
 
-  private matches(sub: Subscription, act: LegalAct): boolean {
+  private matches(sub: Subscription, act: LegalAct, titleTokens?: string[]): boolean {
     if (sub.type === 'ALL') return true;
     if (sub.type === 'CATEGORY') {
       return (sub.query ?? '').toLowerCase() === act.category.toLowerCase();
     }
     if (sub.type === 'KEYWORD') {
-      const q = (sub.query ?? '').toLowerCase();
-      return act.title.toLowerCase().includes(q);
+      const q = sub.query ?? '';
+      const tokens = tokenizeQueryForMatch(q);
+      if (!tokens.length) return false;
+      const tTokens = titleTokens ?? tokenizeTitleForMatch(act.title);
+      return tokens.every(tok => fuzzyTokenMatch(tok, tTokens));
     }
     return false;
   }

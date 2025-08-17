@@ -15,7 +15,8 @@ import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { EqanunIngestJob } from '../eqanun/eqanun.ingest.job';
 import { EqanunApiService } from '../eqanun/eqanun.api.service';
 import { i18n } from './i18n';
-import { TelegramServiceX } from './telegram.service'; // added
+import { TelegramServiceX } from './telegram.service';
+import { normalizeForMatch } from '../common/utils/text.util'; // added
 
 type SubType = 'ALL' | 'CATEGORY' | 'KEYWORD';
 
@@ -277,10 +278,20 @@ export class TelegramUpdate {
     if (type === 'CATEGORY' && normQuery) normQuery = normQuery.toUpperCase();
     if (type === 'ALL') normQuery = null;
 
-    const whereQuery: string | undefined = normQuery === null ? undefined : normQuery;
+    // Duplicate prevention (keyword fuzzy)
+    if (type === 'KEYWORD' && normQuery) {
+      const newNorm = normalizeForMatch(normQuery);
+      const existingKeywords = await this.subs.find({
+        where: { user: { id: user.id }, type: 'KEYWORD' },
+      });
+      const clash = existingKeywords.find(s => normalizeForMatch(s.query || '') === newNorm);
+      if (clash) {
+        return { created: false, existing: clash };
+      }
+    }
 
     const existing = await this.subs.findOne({
-      where: { user, type, query: whereQuery },
+      where: { user, type, query: normQuery === null ? undefined : normQuery },
     });
     if (existing) {
       return { created: false, existing };
@@ -292,12 +303,10 @@ export class TelegramUpdate {
       return { created: true, existing: created };
     } catch (e: any) {
       if (e?.message?.includes('duplicate key')) {
-        return {
-          created: false,
-          existing: await this.subs.findOne({
-            where: { user, type, query: whereQuery },
-          }),
-        };
+        const again = await this.subs.findOne({
+          where: { user, type, query: normQuery === null ? undefined : normQuery },
+        });
+        return { created: false, existing: again! };
       }
       throw e;
     }
